@@ -27,6 +27,7 @@
 #include <linux/types.h>
 #include <linux/elf-em.h>
 #include <linux/ptrace.h>
+#include <linux/uidgid.h>
 
 /* The netlink messages for the audit system is divided into blocks:
  * 1000 - 1099 are for commanding the audit system
@@ -441,6 +442,8 @@ struct audit_krule {
 struct audit_field {
 	u32				type;
 	u32				val;
+	kuid_t				uid;
+	kgid_t				gid;
 	u32				op;
 	char				*lsm_str;
 	void				*lsm_rule;
@@ -480,14 +483,14 @@ static inline void audit_syscall_entry(int arch, int major, unsigned long a0,
 				       unsigned long a1, unsigned long a2,
 				       unsigned long a3)
 {
-	if (unlikely(!audit_dummy_context()))
+	if (unlikely(current->audit_context))
 		__audit_syscall_entry(arch, major, a0, a1, a2, a3);
 }
 static inline void audit_syscall_exit(void *pt_regs)
 {
 	if (unlikely(current->audit_context)) {
 		int success = is_syscall_success(pt_regs);
-		int return_code = regs_return_value(pt_regs);
+		long return_code = regs_return_value(pt_regs);
 
 		__audit_syscall_exit(success, return_code);
 	}

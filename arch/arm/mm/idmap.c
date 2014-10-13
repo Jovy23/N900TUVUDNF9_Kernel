@@ -22,6 +22,13 @@ static void idmap_add_pmd(pud_t *pud, unsigned long addr, unsigned long end,
 			pr_warning("Failed to allocate identity pmd.\n");
 			return;
 		}
+		/*
+		 * Copy the original PMD to ensure that the PMD entries for
+		 * the kernel image are preserved.
+		 */
+		if (!pud_none(*pud))
+			memcpy(pmd, pmd_offset(pud, 0),
+			       PTRS_PER_PMD * sizeof(pmd_t));
 		pud_populate(&init_mm, pud, pmd);
 		pmd += pmd_index(addr);
 	} else
@@ -49,11 +56,6 @@ static void idmap_add_pmd(pud_t *pud, unsigned long addr, unsigned long end,
 #if __GNUC__ >= 4 && __GNUC_MINOR__ >= 6
         __asm__ __volatile__(".arch_extension sec");
 #endif
-	if (tima_is_pg_protected((unsigned long) pmd) == 0) {
-		pmd[0] = __pmd(addr);
-		addr += SECTION_SIZE;
-		pmd[1] = __pmd(addr);
-	} else {
 	clean_dcache_area(pmd, 8);
 	__asm__ __volatile__ (
 		"stmfd  sp!,{r0, r8-r11}\n"
@@ -92,7 +94,6 @@ static void idmap_add_pmd(pud_t *pud, unsigned long addr, unsigned long end,
 		printk(KERN_ERR"pmd[1] %lx != (addr + SECTION_SIZE) %lx in func: %s\n",
 				(unsigned long) pmd[1], (addr + SECTION_SIZE), __func__);
 		tima_send_cmd(pmd[1], 0x3f810221);
-	}
 	}
 #else
 	pmd[0] = __pmd(addr);
