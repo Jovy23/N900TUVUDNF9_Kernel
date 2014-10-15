@@ -1,0 +1,43 @@
+#Building command T-Mobile Note 3 (SM-N900T)
+
+export ARCH=arm
+make VARIANT_DEFCONFIG=msm8974_sec_defconfig msm8974_sec_hlte_tmo_defconfig SELINUX_DEFCONFIG=selinux_defconfig
+make
+./scripts/dtbTool -s 2048 -o arch/arm/boot/dt.img arch/arm/boot/
+
+
+#Building command International Note 3 (SM-N9005)
+
+export ARCH=arm
+make VARIANT_DEFCONFIG=msm8974_sec_defconfig msm8974_sec_hlte_eur_defconfig SELINUX_DEFCONFIG=selinux_defconfig
+make
+./scripts/dtbTool -s 2048 -o arch/arm/boot/dt.img arch/arm/boot/
+
+
+#Once kernel is compiled
+make clean && make mrproper
+
+
+#The following is needed when you do changes in arch/arm/mach-msm/boot/dts kernel source
+
+#First make sure you got the device tree compiler installed
+sudo apt-get install device-tree-compiler
+
+#Download mkbootimg-tools https://github.com/xiaolu/mkbootimg_tools
+#Place "mkboot" shell script and the "dtbTool" executable in script folder
+
+#Build dt.img (needed for overclocking)
+./scripts/dtbTool -s 2048 -o arch/arm/boot/dt.img arch/arm/boot/
+
+#Your zImage & dt.img will be in arch/arm/boot folder
+
+#If having trouble compiling kernel you will have to change the "CROSS_COMPILE" path to where your toolchain is located on your ubuntu OS. Go into your kernel source and open up "Makefile". 
+
+#Search for: 
+CROSS_COMPILE ?= /opt/toolchains/arm-eabi-4.7/bin/arm-eabi-
+
+#Since my ubuntu OS is named jovy23 and i have my toolchain located in a few folders here is how it looks like: NOTE: I renamed the linaro toolchain folder i have downloaded after unzipping the downloaded toolchain to linaro-gcc.
+
+CROSS_COMPILE ?= /home/jovy23/android/toolchain/linaro-gcc/bin/arm-eabi-
+
+#To get the toolchain go to (https://wiki.linaro.org/Cycles/1408/Release?action=show&redirect=Cycles%2FLatest%2FRelease) and look for "android-toolchain 4.9" under "ANDROID COMPONENTS". Note: My toolchain version is "4.9-2014.08".
